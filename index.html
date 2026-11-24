@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>INVENTORY LJ GROUP — Stok Opname</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #f3f6ef;
+      --card: #ffffff;
+      --primary: #163828;
+      --primary-2: #22503a;
+      --accent: #d9ed82;
+      --text: #14261c;
+      --muted: #5d6e64;
+      --border: #dfe5d5;
+      --ok-bg: #e6f4ea;
+      --ok-text: #137333;
+      --warn-bg: #fef7e0;
+      --warn-text: #b06000;
+      --danger-bg: #fce8e6;
+      --danger-text: #c5221f;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 108px;
+    }
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+      color: #fff;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 25;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+    }
+    .header-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .header h1 { margin: 0; font-size: 17px; font-weight: 800; }
+    .badge {
+      background: var(--accent); color: var(--primary);
+      padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 800;
+      border: none; cursor: pointer;
+    }
+    .sub { margin-top: 4px; font-size: 13px; color: #cfe0d5; }
+    .tabs { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .tab-btn {
+      flex: 1; min-width: 78px; padding: 9px 8px; border-radius: 9px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.1); color: #fff;
+      font-size: 12.5px; font-weight: 700; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--accent); color: var(--primary); border-color: var(--accent); }
+    .container { max-width: 580px; margin: 0 auto; padding: 12px; }
+
+    /* Game Loading Bar */
+    .game-hud {
+      background: linear-gradient(135deg, #1b4330 0%, #163828 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(22,56,40,0.16);
+    }
+    .hud-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .hud-title { font-size: 14.5px; font-weight: 800; }
+    .hud-pct { background: var(--accent); color: var(--primary); padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 800; }
+    .progress-track { width: 100%; height: 13px; background: rgba(255,255,255,0.18); border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #b8e94c, #d9ed82); border-radius: 999px; transition: width 0.32s cubic-bezier(.22,1,.36,1); }
+    .hud-sub { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12.5px; color: #d5e6da; }
+    .mode-pill-btn {
+      background: rgba(255,255,255,0.16); color: #fff; border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+
+    .session-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 10px 12px; margin-bottom: 12px;
+    }
+    .session-bar select {
+      padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-weight: 700; background: #f8faf4;
+    }
+    .wh-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 8px; }
+    .wh-card {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 14px;
+      padding: 15px 16px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.04); text-align: left; width: 100%;
+    }
+    .wh-card.active { border-color: var(--primary); background: #f7fbf1; }
+    .wh-title { font-size: 16px; font-weight: 800; color: var(--text); }
+    .wh-meta { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .wh-arrow { background: #eef2e5; color: var(--primary); padding: 7px 11px; border-radius: 8px; font-size: 13px; font-weight: 700; }
+
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-input, .filter-select, .form-ctrl {
+      padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: #fff;
+    }
+    .search-input { flex: 1; }
+    .form-ctrl { width: 100%; margin-bottom: 8px; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card.filled { border-color: var(--primary); background: #fafcf7; }
+    .game-card { border: 2px solid var(--primary); padding: 16px; }
+    .tag-pill {
+      display: inline-block; background: #fef7e0; color: #8a4b00;
+      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; margin-bottom: 8px;
+    }
+    .item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .item-name { font-weight: 800; font-size: 17px; line-height: 1.3; }
+    .item-code { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .sys-pill { font-size: 12.5px; background: #eef2e5; padding: 5px 9px; border-radius: 8px; white-space: nowrap; font-weight: 700; }
+
+    .multi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px; margin-top: 12px; }
+    .field label { display: block; font-size: 13px; font-weight: 800; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; }
+    .field input { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 18px; font-weight: 800; text-align: center; }
+    .field input:focus { outline: none; border-color: var(--primary); background: #f8fcf2; }
+
+    .calc-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; padding: 9px 11px; border-radius: 9px;
+      background: #f2f5eb; font-size: 14px; font-weight: 700;
+    }
+    .diff-zero { background: var(--ok-bg); color: var(--ok-text); }
+    .diff-plus { background: var(--warn-bg); color: var(--warn-text); }
+    .diff-minus { background: var(--danger-bg); color: var(--danger-text); }
+    .note-input { width: 100%; margin-top: 10px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; }
+
+    .game-nav { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 8px; margin-top: 14px; }
+    .btn-game-prev { background: #eef2e5; color: var(--primary); border: none; border-radius: 11px; padding: 13px 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .btn-game-skip { background: #fff5db; color: #855800; border: 1px solid #f3dc9d; border-radius: 11px; padding: 13px 10px; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+    .btn-game-next { background: var(--primary); color: var(--accent); border: none; border-radius: 11px; padding: 13px 14px; font-size: 15.5px; font-weight: 800; cursor: pointer; }
+
+    .footer-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--border); padding: 10px 14px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; z-index: 30;
+    }
+    .summary-text { font-size: 13.5px; line-height: 1.35; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-sec { background: #eef2e5; color: var(--primary); border: none; border-radius: 10px; padding: 12px 13px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-submit { background: var(--primary); color: #fff; border: none; border-radius: 10px; padding: 12px 16px; font-size: 14.5px; font-weight: 800; cursor: pointer; }
+    .btn-danger { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #f5b8b8; border-radius: 8px; padding: 7px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+    .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+    .state-msg { text-align: center; padding: 36px 16px; color: var(--muted); font-size: 15px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-top">
+      <h1 id="whTitle">INVENTORY LJ GROUP</h1>
+      <button class="badge" id="switchWhBtn" onclick="showWarehousePicker()">Pilih Gudang</button>
+    </div>
+    <div class="sub" id="checkerInfo">Memeriksa hak akses akun...</div>
+    <div class="tabs" id="navTabs">
+      <button class="tab-btn active" id="tabWh" onclick="setTab('wh')">🏪 Gudang</button>
+      <button class="tab-btn" id="tabInput" onclick="setTab('input')">🎮 Hitung</button>
+      <button class="tab-btn hidden" id="tabStock" onclick="setTab('stock')">📊 Audit</button>
+      <button class="tab-btn" id="tabReview" onclick="setTab('review')">✅ Review</button>
+      <button class="tab-btn" id="tabHistory" onclick="setTab('history')">🕒 Memori 7H</button>
+      <button class="tab-btn hidden" id="tabUsers" onclick="setTab('users')">👥 Akses</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="unauthBox" class="card hidden" style="border-color:#f5b8b8; background:#fffafa;">
+      <div style="font-size:17px; font-weight:800; color:var(--danger-text); margin-bottom:6px;">⛔ Akun Belum Terdaftar di Gudang</div>
+      <div style="font-size:14.5px; line-height:1.5; margin-bottom:10px;">
+        Akun Telegram Anda belum ditetapkan penempatan gudangnya. Kirimkan ID di bawah ini ke <b>Admin / Manajer</b> agar dibuka aksesnya (mis. <b>Tk. Ketapang</b>):
+      </div>
+      <div style="background:#eef2e5; padding:12px; border-radius:10px; font-size:16px; font-weight:800; text-align:center; margin-bottom:10px;" id="myUidBox">-</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-submit" style="flex:1;" onclick="copyMyUid()">📋 Salin ID Saya</button>
+        <button class="btn-sec" onclick="initAccess()">🔄 Cek Ulang</button>
+      </div>
+    </div>
+
+    <div id="mainAppContent" class="hidden">
+      <div class="session-bar">
+        <div>
+          <div style="font-weight:800; font-size:14.5px;" id="modeLabel">Mode: Blind Count</div>
+          <div style="font-size:12.5px; color:var(--muted);" id="roleBadgeText">Memuat peran...</div>
+        </div>
+        <select id="soSession">
+          <option value="SO Pagi">🌅 SO Pagi</option>
+          <option value="SO Sore">🌆 SO Sore</option>
+        </select>
+      </div>
+
+      <div id="viewWh">
+        <div style="font-size:14px; color:var(--muted); margin-bottom:8px;">
+          Pilih gudang sesuai penempatan akun Anda (produk diurutkan dari yang paling cepat terjual):
+        </div>
+        <div class="wh-grid" id="whGrid"></div>
+      </div>
+
+      <div id="viewInput" class="hidden">
+        <!-- Daily SO Reminder / Lock Banner -->
+        <div id="dailyReminderBanner" class="hidden" style="margin-bottom:10px; border-radius:12px; padding:11px 13px; font-size:13.5px; line-height:1.45;"></div>
+
+        <!-- Wajib Pilih Pegawai Checker -->
+        <div id="checkerPickerCard" class="card" style="margin-bottom:10px; padding:10px 12px; border:1.5px solid #cbd9c7; background:#f8fbf7;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
+            <label for="checkerEmpSelect" style="font-size:13px; font-weight:800; color:var(--primary);">👤 Pegawai yang Input (Wajib):</label>
+            <span id="checkerStatusPill" style="font-size:11.5px; font-weight:700; color:#c5221f;">⚠️ Wajib dipilih</span>
+          </div>
+          <select id="checkerEmpSelect" class="form-ctrl" style="margin-bottom:0; padding:9px 10px; font-size:14px; font-weight:700;" onchange="onCheckerEmpChange(this.value, 'main')">
+            <option value="">-- Pilih Nama Pegawai --</option>
+          </select>
+          <input id="checkerEmpCustom" class="form-ctrl hidden" style="margin-top:8px; margin-bottom:0; padding:9px 10px; font-size:14px;" placeholder="Ketik nama pegawai yang melakukan hitung..." oninput="onCheckerCustomInput(this.value)" />
+        </div>
+
+        <!-- Game Loading / Progress Bar -->
+        <div class="game-hud" id="gameHud">
+          <div class="hud-top">
+            <div class="hud-title" id="hudStepTitle">🎮 Memuat level...</div>
+            <div class="hud-pct" id="hudPct">0%</div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="hudBar" style="width:0%"></div></div>
+          <div class="hud-sub">
+            <span id="hudCounts">Terisi: 0 / 0 item</span>
+            <button class="mode-pill-btn" id="toggleViewBtn" onclick="toggleGameListMode()">📋 Mode Daftar</button>
+          </div>
+        </div>
+
+        <!-- Step-by-step Game Card -->
+        <div id="gameContainer"></div>
+
+        <!-- List Mode (optional toggle) -->
+        <div id="listContainer" class="hidden">
+          <div class="toolbar">
+            <input type="text" id="searchBox" class="search-input" placeholder="Cari nama / kode barang..." />
+            <select id="filterBox" class="filter-select">
+              <option value="all">Semua</option>
+              <option value="filled">Sudah Diisi</option>
+              <option value="unfilled">Belum Diisi</option>
+            </select>
+          </div>
+          <div id="itemList" class="state-msg">Pilih gudang terlebih dahulu...</div>
+        </div>
+      </div>
+
+      <div id="viewStock" class="hidden">
+        <div id="stockLiveList" class="state-msg">Mode Audit Admin / Manajer...</div>
+      </div>
+
+      <div id="viewReview" class="hidden">
+        <div id="reviewList" class="state-msg">Belum ada item yang diisi.</div>
+      </div>
+
+      <div id="viewHistory" class="hidden">
+        <div class="card" style="margin-bottom:10px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+            <div>
+              <div style="font-weight:800; font-size:15.5px; color:var(--primary);">🕒 Memori Input Tim (7 Hari Terakhir)</div>
+              <div style="font-size:12px; color:var(--muted);">Riwayat stok fisik, bobot KG, Bendel Eggtray &amp; selisih selama 7 hari</div>
+            </div>
+            <button class="btn-sec" style="padding:7px 11px; font-size:12.5px;" onclick="refreshHistory7d()">🔄 Muat</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <select id="histWhFilter" class="filter-select" style="width:100%;" onchange="renderHistory7d()">
+              <option value="all">Semua Gudang Akses</option>
+            </select>
+            <select id="histDateFilter" class="filter-select" style="width:100%;" onchange="renderHistory7d()">
+              <option value="all">Semua (7 Hari Terakhir)</option>
+            </select>
+          </div>
+        </div>
+        <div id="history7dList" class="state-msg">Memuat memori input 7 hari terakhir...</div>
+      </div>
+
+      <div id="viewUsers" class="hidden">
+        <div class="card">
+          <div style="font-weight:800; font-size:16px; margin-bottom:8px;">➕ Tambah / Atur Akses Tim Lapangan</div>
+          <input id="accUid" class="form-ctrl" placeholder="Telegram User ID (contoh: 123456789)" />
+          <input id="accName" class="form-ctrl" placeholder="Nama Karyawan (contoh: Budi - Ketapang)" />
+          <input id="accPin6" class="form-ctrl" type="tel" maxlength="6" placeholder="6 Digit Akhir No. HP Telegram (opsional, mis: 836360)" />
+          <select id="accRole" class="form-ctrl">
+            <option value="petugas">Petugas Outlet / Gudang (Sesuai Lokasi)</option>
+            <option value="admin">Admin (Akses Semua Gudang + Audit)</option>
+            <option value="manajer">Manajer (Akses Semua Gudang + Audit)</option>
+          </select>
+          <select id="accGudang" class="form-ctrl">
+            <option value="ketapang">Tk. Ketapang (Outlet Ketapang)</option>
+            <option value="wonoayu">Tk. Wonoayu (Outlet Wonoayu)</option>
+            <option value="blitar2">G. Blitar — Lantai 2 Saja (Khusus Eggtray)</option>
+            <option value="blitar1">G. Blitar — Lantai 1 Saja (Telur, Peti &amp; Pakan)</option>
+            <option value="blitar_farm">G. Blitar (Bawah Lt. 1 &amp; Atas Lt. 2) + G. Farm</option>
+            <option value="blitar">G. Blitar (Lt. 1 &amp; Lt. 2)</option>
+            <option value="farm">G. Farm Saja (Lisa Jaya Farm)</option>
+            <option value="all">Semua Gudang (Khusus Admin / Manajer)</option>
+          </select>
+          <button class="btn-submit" style="width:100%;" onclick="saveUserAccess()">💾 Simpan Hak Akses</button>
+        </div>
+        <div class="card">
+          <div style="font-weight:800; font-size:16px; margin-bottom:8px;">Daftar Akun &amp; Permintaan Baru</div>
+          <div id="usersList" class="state-msg">Memuat daftar akses...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi PIN 6 Digit Sebelum Kirim Draft -->
+  <div id="pinModal" class="hidden" style="position:fixed; inset:0; background:rgba(15,32,24,0.62); z-index:70; display:flex; align-items:center; justify-content:center; padding:16px;">
+    <div class="card" style="width:100%; max-width:400px; border:2px solid var(--primary); padding:18px;">
+      <div style="font-size:18px; font-weight:800; color:var(--primary); margin-bottom:6px;">🔐 Konfirmasi Kirim Draft Beecloud</div>
+      <div style="margin-bottom:10px;">
+        <label for="pinCheckerSelect" style="display:block; font-size:13px; font-weight:800; color:var(--primary); margin-bottom:4px;">👤 Nama Pegawai Checker (Wajib):</label>
+        <select id="pinCheckerSelect" class="form-ctrl" style="margin-bottom:0; padding:10px; font-size:14.5px; font-weight:700;" onchange="onCheckerEmpChange(this.value, 'modal')">
+          <option value="">-- Pilih Nama Pegawai --</option>
+        </select>
+        <input id="pinCheckerCustom" class="form-ctrl hidden" style="margin-top:6px; margin-bottom:0; padding:10px; font-size:14px;" placeholder="Ketik nama pegawai yang input..." oninput="onCheckerCustomInput(this.value)" />
+      </div>
+      <div style="font-size:13.5px; color:var(--muted); line-height:1.45; margin-bottom:10px;">
+        Masukkan <b>6 digit angka terakhir</b> nomor HP Telegram (atau 6 digit terakhir ID Telegram) yang Anda pakai untuk mengesahkan pengiriman Draft Stok Opname.
+      </div>
+      <input id="pin6Input" type="tel" inputmode="numeric" maxlength="6" placeholder="Contoh: 836360"
+        style="width:100%; padding:14px; font-size:22px; font-weight:800; letter-spacing:6px; text-align:center; border:2px solid var(--primary); border-radius:12px; margin-bottom:12px;" />
+      <div id="pinErrMsg" class="hidden" style="color:var(--danger-text); font-size:13.5px; font-weight:700; margin-bottom:10px; text-align:center;"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-sec" style="flex:1;" onclick="closePinModal()">Batal</button>
+        <button id="confirmPinBtn" class="btn-submit" style="flex:1.5;" onclick="confirmAndSubmitDraft()">🚀 Kirim Draft</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kamera Langsung (WebRTC getUserMedia, anti-galeri) -->
+  <div id="liveCamModal" class="hidden" style="position:fixed; inset:0; background:rgba(10,20,15,0.94); z-index:85; display:flex; flex-direction:column; justify-content:space-between; padding:12px; color:#fff;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+      <div style="min-width:0; flex:1;">
+        <div id="liveCamTitle" style="font-size:15px; font-weight:800; color:#d9ed82; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📷 Kamera Langsung</div>
+        <div id="liveCamSubtitle" style="font-size:12px; color:#cfe0d5; margin-top:2px;">Arahkan kamera ke fisik barang</div>
+      </div>
+      <span id="liveCamFacingBadge" style="background:#b91c1c; color:#fff; font-size:11px; font-weight:800; padding:4px 8px; border-radius:999px; white-space:nowrap;">🔴 LIVE · Belakang</span>
+    </div>
+    <div style="flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:10px 0; position:relative; background:#000; border-radius:14px; overflow:hidden; border:1.5px solid rgba(217,237,130,0.35);">
+      <video id="liveCamVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:contain; background:#000;"></video>
+      <div id="liveCamStatus" class="hidden" style="position:absolute; inset:12px; background:rgba(15,32,24,0.92); border:1.5px solid #d9ed82; border-radius:12px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px;">
+        <div id="liveCamStatusText" style="font-size:13.5px; line-height:1.5; color:#fff; white-space:pre-line;"></div>
+        <button type="button" id="liveCamRetryBtn" class="btn-submit hidden" style="background:#d9ed82; color:#163828; padding:10px 16px;" onclick="retryLiveCamera()">🔄 Coba Buka Kamera Lagi</button>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1.6fr 1fr; gap:8px; padding-bottom:env(safe-area-inset-bottom, 4px);">
+      <button type="button" class="btn-sec" style="background:#26382e; color:#fff; padding:13px 10px;" onclick="closeLiveCamera()">✖️ Batal</button>
+      <button type="button" id="liveCamCaptureBtn" class="btn-submit" style="background:#d9ed82; color:#163828; font-size:16px; padding:14px 12px;" disabled onclick="captureLiveCameraPhoto()">📸 JEPRET</button>
+      <button type="button" id="liveCamSwitchBtn" class="btn-sec" style="background:#26382e; color:#fff; padding:13px 10px;" onclick="switchLiveCamera()">🔄 Balik</button>
+    </div>
+  </div>
+
+  <div class="footer-bar hidden" id="footerBar" style="flex-direction:column; align-items:stretch; gap:6px; padding:10px 12px;">
+    <div class="summary-text" id="summaryText" style="display:flex; justify-content:space-between; align-items:center;">
+      <span><strong>0/0</strong> item terisi</span>
+      <span style="color:var(--muted); font-size:12px;">Isi semua untuk Kirim Draft</span>
+    </div>
+    <!-- Tombol saat BELUM PENUH: Balik, Kosong (0), Lanjut -->
+    <div id="frozenStepControls" style="display:grid; grid-template-columns:1fr 1fr 1.5fr; gap:8px;">
+      <button type="button" tabindex="-1" onmousedown="event.preventDefault()" class="btn-game-prev" id="frzPrevBtn" onclick="goStep(stepIdx - 1)">⬅️ Balik</button>
+      <button type="button" tabindex="-1" onmousedown="event.preventDefault()" class="btn-game-skip" id="frzSkipBtn" onclick="skipCurrentStep()">⏭️ Kosong (0)</button>
+      <button type="button" tabindex="-1" onmousedown="event.preventDefault()" class="btn-game-next" id="frzNextBtn" onclick="nextStep()">Lanjut ➡️</button>
+    </div>
+    <!-- Tombol saat SUDAH PENUH: Reset & Kirim Buat Draft -->
+    <div id="frozenFullControls" class="hidden" style="display:grid; grid-template-columns:1fr 1.8fr; gap:8px;">
+      <button class="btn-sec" onclick="confirmResetEntries()" style="padding:13px;">🔄 Reset</button>
+      <button id="submitBtn" class="btn-submit" onclick="openPinModal()" style="padding:13px; font-size:15.5px;">🚀 Kirim &amp; Buat Draft</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    const ALL_WAREHOUSES = [
+      { key: "blitar1", wh_id: 1, branch_id: 7, name: "G. Blitar — Lantai 1", desc: "18 item • Telur, Peti & Pakan" },
+      { key: "blitar2", wh_id: 1, branch_id: 7, name: "G. Blitar — Lantai 2", desc: "6 item Eggtray • Gudang Blitar" },
+      { key: "wonoayu", wh_id: 2, branch_id: 4, name: "Tk. Wonoayu", desc: "14 produk outlet • Urutan paling laris" },
+      { key: "ketapang", wh_id: 3, branch_id: 5, name: "Tk. Ketapang", desc: "14 produk outlet • Urutan paling laris" },
+      { key: "farm", wh_id: 4, branch_id: 6, name: "G. Farm (LJF)", desc: "14 item • Bahan Baku & Pakan" }
+    ];
+
+    const params = new URLSearchParams(window.location.search);
+    const API_BASE = params.get("api_base") || "https://n8n.srv1274987.hstgr.cloud/webhook";
+    const tgUser = tg?.initDataUnsafe?.user || {};
+    const USER_ID = String(params.get("user_id") || tgUser.id || "");
+    const CHECKER_NAME = params.get("checker_name") || [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ") || tgUser.username || "Checker Lapangan";
+    const USERNAME = tgUser.username || "";
+    const CHAT_ID = params.get("chat_id") || "";
+
+    const nowHour = new Date().getHours();
+    document.getElementById("soSession").value = nowHour < 13 ? "SO Pagi" : "SO Sore";
+
+    let ACCESS = { authorized: false, is_admin_or_manager: false, role: "pending", allowed_keys: [], users: [], daily_counts: {} };
+    let visibleWarehouses = [];
+    let currentWh = null;
+    let currentDailySo = { count: 0, max: 2, remaining: 2, locked: false, sessions: [] };
+    const alertedWhToday = {};
+    let items = [];
+    let entries = {};
+    let photosByIdx = {};
+    const MAX_PHOTOS_PER_SUBMIT = 10;
+    let activeCamStream = null;
+    let liveCamTargetIdx = null;
+    let liveCamFacing = "environment";
+    let liveCamRequestToken = 0;
+    let viewMode = "game"; // 'game' (default klik lanjut) | 'list'
+    let stepIdx = 0;
+
+    async function initAccess() {
+      document.getElementById("checkerInfo").textContent = "Memeriksa hak akses " + CHECKER_NAME + "...";
+      try {
+        const res = await fetch(`${API_BASE}/inventory-access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "check_access", user_id: USER_ID, nama: CHECKER_NAME, username: USERNAME })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Gagal cek akses");
+        ACCESS = data;
+
+        if (!ACCESS.authorized || !(ACCESS.allowed_keys || []).length) {
+          document.getElementById("unauthBox").classList.remove("hidden");
+          document.getElementById("mainAppContent").classList.add("hidden");
+          document.getElementById("footerBar").classList.add("hidden");
+          document.getElementById("myUidBox").textContent = USER_ID || "(Buka lewat Telegram agar ID terbaca)";
+          document.getElementById("checkerInfo").textContent = "Akun belum terdaftar • ID: " + (USER_ID || "-");
+          return;
+        }
+
+        document.getElementById("unauthBox").classList.add("hidden");
+        document.getElementById("mainAppContent").classList.remove("hidden");
+        document.getElementById("footerBar").classList.remove("hidden");
+
+        const isMgr = Boolean(ACCESS.is_admin_or_manager);
+        document.getElementById("tabStock").classList.add("hidden"); // Sistem Beecloud hanya muncul sebagai Selisih Sementara setelah submit
+        document.getElementById("tabUsers").classList.toggle("hidden", !isMgr);
+        document.getElementById("modeLabel").textContent = isMgr ? `Mode: ${ACCESS.role.toUpperCase()} (Blind Count + Akses Tim)` : "Mode: Blind Count (Game Step)";
+        document.getElementById("roleBadgeText").textContent = `${CHECKER_NAME} (ID: ${USER_ID})`;
+
+        visibleWarehouses = ALL_WAREHOUSES.filter(w => ACCESS.allowed_keys.includes(w.key));
+        renderWarehouseGrid();
+        getCombinedHistory7d();
+        if (isMgr) renderUsersList();
+
+        const initKey = (params.get("wh_key") || "").toLowerCase();
+        if (initKey && ACCESS.allowed_keys.includes(initKey)) {
+          await selectWarehouse(initKey);
+        } else if (visibleWarehouses.length === 1) {
+          await selectWarehouse(visibleWarehouses[0].key);
+        } else {
+          setTab("wh");
+        }
+      } catch (err) {
+        document.getElementById("checkerInfo").textContent = "Error cek akses: " + err.message;
+      }
+    }
+
+    window.copyMyUid = async function() {
+      try {
+        await navigator.clipboard.writeText(USER_ID);
+        if (tg) tg.showAlert("User ID " + USER_ID + " disalin!"); else alert("Disalin: " + USER_ID);
+      } catch (e) {}
+    };
+
+    function renderWarehouseGrid() {
+      const counts = ACCESS.daily_counts || {};
+      document.getElementById("whGrid").innerHTML = visibleWarehouses.map(w => {
+        const cnt = Number(counts[w.key] || 0);
+        const badgeHtml = cnt >= 2
+          ? `<div style="margin-top:4px; display:inline-block; background:#fde8e8; color:#c5221f; font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:999px;">🔒 Terkunci hari ini (2/2)</div>`
+          : (cnt === 1
+            ? `<div style="margin-top:4px; display:inline-block; background:#fef3c7; color:#92400e; font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:999px;">⚠️ Hari ini sudah hitung 1x (sisa 1x)</div>`
+            : `<div style="margin-top:4px; display:inline-block; background:#e6f4ea; color:#137333; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">Hari ini: 0/2 input</div>`);
+        return `
+        <button class="wh-card ${currentWh && currentWh.key === w.key ? "active" : ""}" onclick="selectWarehouse('${w.key}')">
+          <div>
+            <div class="wh-title">${w.name}</div>
+            <div class="wh-meta">${w.desc}</div>
+            ${badgeHtml}
+          </div>
+          <div class="wh-arrow">${cnt >= 2 ? "Terkunci" : "Mulai →"}</div>
+        </button>
+      `;
+      }).join("");
+    }
+
+    window.showWarehousePicker = function() { setTab("wh"); };
+
+    window.setTab = function(tab) {
+      if (typeof window.closeLiveCamera === "function") window.closeLiveCamera();
+      ["wh", "input", "stock", "review", "history", "users"].forEach(t => {
+        const vEl = document.getElementById("view" + t.charAt(0).toUpperCase() + t.slice(1));
+        if (vEl) vEl.classList.toggle("hidden", t !== tab);
+        const btn = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) btn.classList.toggle("active", t === tab);
+      });
+      if (tab === "review") renderReview();
+      if (tab === "stock") renderStockOnly();
+      if (tab === "history") renderHistory7d();
+      if (tab === "users") renderUsersList();
+      updateSummary();
+    };
+
+    window.toggleGameListMode = function() {
+      viewMode = viewMode === "game" ? "list" : "game";
+      document.getElementById("gameContainer").classList.toggle("hidden", viewMode !== "game");
+      document.getElementById("listContainer").classList.toggle("hidden", viewMode !== "list");
+      document.getElementById("toggleViewBtn").textContent = viewMode === "game" ? "📋 Mode Daftar" : "🎮 Mode Game";
+      if (viewMode === "game") renderGameStep(); else renderList();
+    };
+
+    const STAFF_BY_WH = {
+      ketapang: ["Roy", "Tegar", "Grace", "Nanang"],
+      wonoayu: ["Rifky", "Fredo", "Jaya"],
+      blitar1: ["Anissa", "Maulida", "M. Zuhdi Irhamni", "Rozana Lisaida"],
+      blitar2: ["Lino", "Anissa", "Maulida", "M. Zuhdi Irhamni"],
+      farm: ["Anissa", "Maulida", "M. Zuhdi Irhamni", "Rozana Lisaida"]
+    };
+    let selectedCheckerEmp = "";
+    let customCheckerEmp = "";
+
+    function getActiveCheckerEmployee() {
+      if (selectedCheckerEmp === "__other__") return customCheckerEmp.trim();
+      return selectedCheckerEmp.trim();
+    }
+
+    function updateCheckerStatusUI() {
+      const emp = getActiveCheckerEmployee();
+      const pill = document.getElementById("checkerStatusPill");
+      if (pill) {
+        pill.textContent = emp ? `✅ ${emp}` : "⚠️ Wajib dipilih";
+        pill.style.color = emp ? "#137333" : "#c5221f";
+      }
+      if (currentWh) {
+        const who = emp || CHECKER_NAME;
+        document.getElementById("checkerInfo").textContent = `Checker: ${who} • ${ACCESS.is_admin_or_manager ? "Audit Mode" : "Blind Count"}`;
+      }
+    }
+
+    function populateCheckerDropdowns(whKey) {
+      const list = STAFF_BY_WH[whKey] || ["Anissa", "M. Zuhdi Irhamni"];
+      const optsHtml = `<option value="">-- Pilih Nama Pegawai --</option>` +
+        list.map(name => `<option value="${name}">${name}</option>`).join("") +
+        `<option value="__other__">✏️ Lainnya (Ketik Nama)...</option>`;
+
+      selectedCheckerEmp = "";
+      customCheckerEmp = "";
+      if (whKey === "blitar2" && USER_ID === "8725968310") {
+        selectedCheckerEmp = "Lino";
+      }
+
+      ["checkerEmpSelect", "pinCheckerSelect"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.innerHTML = optsHtml; el.value = selectedCheckerEmp; }
+      });
+      ["checkerEmpCustom", "pinCheckerCustom"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ""; el.classList.add("hidden"); }
+      });
+      updateCheckerStatusUI();
+    }
+
+    window.onCheckerEmpChange = function(val, source) {
+      selectedCheckerEmp = val;
+      ["checkerEmpSelect", "pinCheckerSelect"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== val) el.value = val;
+      });
+      const isOther = val === "__other__";
+      ["checkerEmpCustom", "pinCheckerCustom"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("hidden", !isOther);
+      });
+      if (isOther) {
+        const targetInp = document.getElementById(source === "modal" ? "pinCheckerCustom" : "checkerEmpCustom");
+        if (targetInp) targetInp.focus();
+      }
+      updateCheckerStatusUI();
+    };
+
+    window.onCheckerCustomInput = function(val) {
+      customCheckerEmp = val;
+      ["checkerEmpCustom", "pinCheckerCustom"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== val) el.value = val;
+      });
+      updateCheckerStatusUI();
+    };
+
+    window.selectWarehouse = async function(whKey) {
+      if (typeof window.closeLiveCamera === "function") window.closeLiveCamera();
+      const wh = visibleWarehouses.find(w => w.key === whKey);
+      if (!wh) return;
+      currentWh = wh;
+      entries = {};
+      photosByIdx = {};
+      stepIdx = 0;
+      viewMode = "game";
+      document.getElementById("gameContainer").classList.remove("hidden");
+      document.getElementById("listContainer").classList.add("hidden");
+      document.getElementById("toggleViewBtn").textContent = "📋 Mode Daftar";
+      document.getElementById("whTitle").textContent = wh.name;
+      document.getElementById("switchWhBtn").textContent = visibleWarehouses.length > 1 ? "Ganti Gudang" : wh.name;
+      populateCheckerDropdowns(whKey);
+      renderWarehouseGrid();
+      setTab("input");
+      await loadStock();
+    };
+
+    function calcConverted(item, vals) {
+      const inputs = item.inputs || ["qty"];
+      const hasAny = inputs.some(f => vals[f] !== undefined && vals[f] !== "");
+      if (!hasAny) return null;
+      const v = inputs.map(f => Number(vals[f] || 0));
+      let res = 0;
+      switch (item.formula) {
+        case "15_30_16": res = v[0]*15 + v[1]*30/16 + v[2]/16; break;
+        case "10":       res = v[0]*10; break;
+        case "puyuh":    res = v[0]*10 + v[1] + v[2]/90; break;
+        case "300_30_1": res = v[0]*300 + v[1]*30 + v[2]; break;
+        case "200_20_1": res = v[0]*200 + v[1]*20 + v[2]; break;
+        case "30_1":     res = v[0]*30 + v[1]; break;
+        case "16_1":     res = inputs.length === 3 ? (v[0]*240 + v[1]*30 + v[2]) : (v[0]*16 + v[1]); break;
+        case "70_1":     res = v[0]*70 + v[1]; break;
+        case "100_1":    res = v[0]*100 + v[1]; break;
+        case "sak_kg":   res = v[0]*50 + v[1]; break;
+        default:         res = v[0];
+      }
+      return Number(res.toFixed(2));
+    }
+
+    function getEggKgConversionInfo(item, vals, qtyFisik) {
+      if (!item || qtyFisik === null || qtyFisik === undefined) return null;
+      const f = item.formula;
+      if (f === "15_30_16" || f === "puyuh") {
+        const totalKg = Number(Number(qtyFisik).toFixed(2));
+        return { totalKg, totalBtr: null, detailText: "" };
+      }
+      if (f === "16_1" || Number(item.item_id) === 38) {
+        const totalKg = Number((Number(qtyFisik) / 16).toFixed(2));
+        return { totalKg, totalBtr: null, detailText: "" };
+      }
+      if (f === "10" && String(item.unit_label || "").toLowerCase() === "kg") {
+        return { totalKg: Number(Number(qtyFisik).toFixed(2)), totalBtr: null, detailText: "" };
+      }
+      return null;
+    }
+
+    function formatBreakdown(item, vals) {
+      const inputs = item.inputs || ["qty"];
+      const parts = inputs
+        .filter(f => vals[f] !== undefined && vals[f] !== "" && Number(vals[f]) !== 0)
+        .map(f => `${vals[f]} ${f}`);
+      return parts.length ? parts.join(" + ") : "0";
+    }
+
+    function getEggtrayBendelSize(item) {
+      if (!item) return 0;
+      const id = Number(item.item_id || 0);
+      if (item.formula === "70_1" || [44, 45, 100].includes(id)) return 70;
+      if (item.formula === "100_1" || id === 369) return 100;
+      return 0;
+    }
+
+    function formatItemQtyDisplay(item, qtyVal, isDiff) {
+      const n = Number(Number(qtyVal || 0).toFixed(2));
+      const perBendel = getEggtrayBendelSize(item);
+      const unitLbl = (item?.unit_label || "").toUpperCase();
+      if (perBendel > 0) {
+        if (Math.abs(n) < 1e-6) return isDiff ? "Klop (0 BENDEL)" : "0 BENDEL";
+        const sign = n < 0 ? "-" : (isDiff ? "+" : "");
+        const abs = Math.abs(n);
+        const bendel = Math.floor((abs + 1e-6) / perBendel);
+        const lembar = Number((abs - bendel * perBendel).toFixed(2));
+        if (lembar > 0) {
+          return `${sign}${bendel} BENDEL, ${lembar} LEMBAR`;
+        }
+        return `${sign}${bendel} BENDEL`;
+      }
+      if (Number(item?.item_id) === 38 || item?.formula === "16_1") {
+        const kg = Number((n / 16).toFixed(2));
+        if (isDiff) {
+          if (Math.abs(n) < 1e-6) return "Klop (0 KG)";
+          return `${kg > 0 ? "+" : ""}${kg} KG`;
+        }
+        return `${kg} KG`;
+      }
+      if (isDiff) {
+        if (Math.abs(n) < 1e-6) return "Klop (0)";
+        return `${n > 0 ? "+" : ""}${n} ${unitLbl}`;
+      }
+      return `${n} ${unitLbl}`;
+    }
+
+    function formatCalcLineText(item, qtyFisik, showSys, vals) {
+      const perBendel = getEggtrayBendelSize(item);
+      const eggKg = getEggKgConversionInfo(item, vals, qtyFisik);
+      const primary = formatItemQtyDisplay(item, qtyFisik, false);
+      let text = "";
+      let html = "";
+      if (eggKg) {
+        text = `⚖️ Total Bobot: ${eggKg.totalKg} KG`;
+        html = `<div style="font-size:16.5px; font-weight:800; color:#0d5c2f;">⚖️ Total Bobot: <span style="font-size:18px;">${eggKg.totalKg} KG</span></div>`;
+      } else if (perBendel > 0) {
+        text = `Hasil Hitung: ${primary}`;
+        html = `<div style="font-size:15.5px; font-weight:800;">📦 Hasil Hitung: ${primary}</div>`;
+      } else {
+        text = `Hasil Hitung: ${primary}`;
+        html = `<div style="font-size:15.5px; font-weight:800;">Hasil Hitung: ${primary}</div>`;
+      }
+      let calcClass = "diff-zero";
+      if (showSys && item.qty1 !== null) {
+        const diff = Number((qtyFisik - Number(item.qty1)).toFixed(2));
+        const diffStr = formatItemQtyDisplay(item, diff, true);
+        text += ` • Selisih: ${diffStr}`;
+        html += `<div style="font-size:12.5px; margin-top:2px;">Selisih: <b>${diffStr}</b></div>`;
+        calcClass = diff === 0 ? "diff-zero" : (diff > 0 ? "diff-plus" : "diff-minus");
+      }
+      return { text, html, calcClass };
+    }
+
+    function renderDailyBannerAndLock() {
+      const banner = document.getElementById("dailyReminderBanner");
+      const pickerCard = document.getElementById("checkerPickerCard");
+      const hud = document.getElementById("gameHud");
+      const gc = document.getElementById("gameContainer");
+      const lc = document.getElementById("listContainer");
+      const d = currentDailySo || { count: 0, max: 2, remaining: 2, locked: false, sessions: [] };
+      const sessText = (d.sessions || []).map(s => `${s.session || "SO"} (${String(s.waktu || "").split(",")[1]?.trim() || s.waktu || "-"})`).join(" • ");
+
+      if (d.locked || Number(d.count || 0) >= 2) {
+        banner.classList.add("hidden");
+        if (pickerCard) pickerCard.classList.add("hidden");
+        hud.classList.add("hidden");
+        lc.classList.add("hidden");
+        gc.classList.remove("hidden");
+        gc.innerHTML = `
+          <div class="card" style="border:2px solid #c5221f; background:#fffafa; text-align:center; padding:22px 16px;">
+            <div style="font-size:38px; margin-bottom:8px;">🔒</div>
+            <div style="font-size:18px; font-weight:800; color:#c5221f; margin-bottom:6px;">Batas Hitung Harian Tercapai (2/2)</div>
+            <div style="font-size:14px; color:#3b4d42; line-height:1.5; margin-bottom:12px;">
+              Akun Anda hari ini sudah melakukan <b>${d.count} kali</b> hitung stok di <b>${currentWh.name}</b>.<br>
+              Sesuai aturan, 1 akun dibatasi maksimal <b>2 kali input per hari</b> (baik SO Pagi maupun SO Sore) agar tidak terjadi input berulang.
+            </div>
+            ${sessText ? `<div style="background:#fde8e8; color:#991b1b; padding:8px 10px; border-radius:10px; font-size:12.5px; font-weight:700; margin-bottom:14px;">Riwayat Hari Ini:<br>${sessText}</div>` : ""}
+            <button class="btn-submit" style="width:100%; margin-bottom:8px;" onclick="setTab('history')">🕒 Lihat Memori Input 7 Hari</button>
+            ${visibleWarehouses.length > 1
+              ? `<button class="btn-sec" style="width:100%;" onclick="showWarehousePicker()">🏬 Pilih Gudang Lain</button>`
+              : `<button class="btn-sec" style="width:100%;" onclick="closeMiniApp()">Tutup Mini App</button>`}
+          </div>
+        `;
+        updateSummary();
+        return true;
+      }
+
+      if (pickerCard) pickerCard.classList.remove("hidden");
+      hud.classList.remove("hidden");
+      if (Number(d.count || 0) === 1) {
+        banner.classList.remove("hidden");
+        banner.style.background = "#fffbeb";
+        banner.style.border = "1.5px solid #f59e0b";
+        banner.style.color = "#78350f";
+        banner.innerHTML = `⚠️ <b>Pengingat Hitung Harian (1/2):</b> Anda selama 1 hari ini sudah melakukan hitung stok <b>1 kali</b> di <b>${currentWh.name}</b>${sessText ? ` (${sessText})` : ""}.<br>Maksimal <b>2 kali/hari</b> (SO Pagi &amp; Sore) — tersisa <b>1 kali</b> input lagi hari ini.`;
+        if ((d.sessions || []).some(s => String(s.session || "").toLowerCase().includes("pagi"))) {
+          document.getElementById("soSession").value = "SO Sore";
+        }
+        const alertKey = `${currentWh.key}_${d.date || "today"}`;
+        if (!alertedWhToday[alertKey]) {
+          alertedWhToday[alertKey] = true;
+          const msg = `Pengingat: Anda selama 1 hari ini sudah melakukan hitung stok 1 kali di ${currentWh.name}. Maksimal hanya 2 kali input per hari (SO Pagi & Sore).`;
+          setTimeout(() => { if (tg) tg.showAlert(msg); else alert(msg); }, 150);
+        }
+      } else {
+        banner.classList.remove("hidden");
+        banner.style.background = "#f0fdf4";
+        banner.style.border = "1px solid #bbf7d0";
+        banner.style.color = "#166534";
+        banner.innerHTML = `ℹ️ Hari ini Anda belum mengirim stok opname di <b>${currentWh.name}</b> (kuota: <b>0/2</b> per hari untuk SO Pagi &amp; Sore).`;
+      }
+      return false;
+    }
+
+    async function loadStock() {
+      if (!currentWh) return;
+      document.getElementById("dailyReminderBanner").classList.add("hidden");
+      document.getElementById("gameContainer").innerHTML = `<div class="state-msg">Memuat produk ${currentWh.name}...</div>`;
+      const modeParam = ACCESS.is_admin_or_manager ? "ring1" : "blind";
+      try {
+        const res = await fetch(`${API_BASE}/inventory-stock?wh_id=${currentWh.wh_id}&wh_key=${encodeURIComponent(currentWh.key)}&mode=${modeParam}&user_id=${encodeURIComponent(USER_ID)}`);
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.message || "Gagal memuat item Beecloud");
+        items = (json.items || []).map((it, idx) => ({ ...it, _idx: idx }));
+        currentDailySo = json.daily_so || { count: 0, max: 2, remaining: 2, locked: false, sessions: [] };
+        ACCESS.daily_counts = { ...(ACCESS.daily_counts || {}), [currentWh.key]: Number(currentDailySo.count || 0) };
+        renderWarehouseGrid();
+        stepIdx = 0;
+        if (renderDailyBannerAndLock()) return;
+        renderGameStep();
+        renderList();
+        renderStockOnly();
+      } catch (err) {
+        document.getElementById("gameContainer").innerHTML = `<div class="state-msg" style="color:var(--danger-text)">Gagal memuat item:<br>${err.message}</div>`;
+      }
+    }
+
+    function safeAlert(msg) {
+      try {
+        if (tg && typeof tg.isVersionAtLeast === "function" && tg.isVersionAtLeast("6.2") && typeof tg.showAlert === "function") {
+          tg.showAlert(msg);
+          return;
+        }
+      } catch (e) {}
+      alert(msg);
+    }
+
+    function getUnfilledItems() {
+      return items.filter(it => calcConverted(it, (entries[it._idx] || {}).vals || {}) === null);
+    }
+
+    window.markAllUnfilledZeroAndOpenPin = function() {
+      const unfilled = getUnfilledItems();
+      for (const it of unfilled) {
+        if (!entries[it._idx]) entries[it._idx] = { vals: {}, note: "" };
+        const f0 = (it.inputs && it.inputs[0]) || "qty";
+        entries[it._idx].vals[f0] = "0";
+      }
+      renderGameStep(false);
+      renderList();
+      updateSummary();
+      openPinModal();
+    };
+
+    function updateHud() {
+      const total = items.length || 1;
+      const filled = getFilledItems().length;
+      const pct = items.length ? Math.min(100, Math.round((filled / items.length) * 100)) : 0;
+      document.getElementById("hudBar").style.width = `${pct}%`;
+      document.getElementById("hudPct").textContent = `${pct}%`;
+      document.getElementById("hudStepTitle").textContent = stepIdx >= items.length
+        ? (filled >= items.length ? `🏆 Selesai Semua (${items.length} Produk)` : `⚠️ Belum Lengkap (${filled}/${items.length} Terisi)`)
+        : `🎮 Produk ${stepIdx + 1} dari ${items.length}`;
+      document.getElementById("hudCounts").textContent = `Sudah Diisi: ${filled} / ${items.length} item`;
+    }
+
+    function renderGameStep(keepKeyboardFocus) {
+      const box = document.getElementById("gameContainer");
+      const activeEl = document.activeElement;
+      const wasInputFocused = Boolean(activeEl && box.contains(activeEl) && activeEl.tagName === "INPUT");
+      const shouldFocusFirst = Boolean(keepKeyboardFocus || wasInputFocused);
+
+      if (!items.length) { box.innerHTML = `<div class="state-msg">Tidak ada produk.</div>`; updateHud(); return; }
+
+      if (stepIdx >= items.length) {
+        if (activeEl && typeof activeEl.blur === "function") activeEl.blur();
+        const filled = getFilledItems();
+        const unfilled = getUnfilledItems();
+        updateHud();
+        if (unfilled.length > 0) {
+          const chipsHtml = unfilled.map(u => `
+            <button type="button" class="btn-sec" style="padding:6px 10px; font-size:12.5px; text-align:left;" onclick="goStep(${u._idx})">#${u._idx + 1} ${u.itemname}</button>
+          `).join("");
+          box.innerHTML = `
+            <div class="card game-card" style="border:2px solid #f59e0b; background:#fffdf5;">
+              <div style="text-align:center; margin-bottom:10px;">
+                <div style="font-size:32px; margin-bottom:4px;">⚠️</div>
+                <div style="font-size:18px; font-weight:800; color:#b45309; margin-bottom:4px;">Masih Ada ${unfilled.length} Produk Belum Diisi (${filled.length}/${items.length})</div>
+                <div style="font-size:13.5px; color:#574b38; line-height:1.45;">
+                  Produk yang stok fisiknya kosong wajib ditandai <b>0</b> dulu sebelum Kirim Draft. Klik produk di bawah untuk mengisi, atau klik tombol hijau untuk langsung menandai sisa yang kosong = <b>0</b>.
+                </div>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:12px;">
+                ${chipsHtml}
+              </div>
+              <button type="button" class="btn-submit" style="width:100%; padding:14px; font-size:15px; margin-top:4px;" onclick="markAllUnfilledZeroAndOpenPin()">0️⃣ Anggap ${unfilled.length} Produk Kosong = 0 &amp; Kirim Draft</button>
+              <div style="display:flex; gap:8px; margin-top:10px;">
+                <button type="button" class="btn-sec" style="flex:1;" onclick="goStep(${unfilled[0]._idx})">📝 Isi Produk #${unfilled[0]._idx + 1}</button>
+                <button type="button" class="btn-sec" style="flex:1;" onclick="setTab('review')">✅ Lihat Yang Terisi (${filled.length})</button>
+              </div>
+            </div>
+          `;
+        } else {
+          box.innerHTML = `
+            <div class="card game-card" style="text-align:center;">
+              <div style="font-size:36px; margin-bottom:6px;">🎉</div>
+              <div style="font-size:19px; font-weight:800; color:var(--primary); margin-bottom:6px;">Semua ${items.length} Produk Sudah Terisi (100%)!</div>
+              <div style="font-size:14.5px; color:var(--muted); margin-bottom:14px;">
+                Total terisi: <b>${filled.length} item</b> di <b>${currentWh.name}</b>.<br>
+                Klik tombol di bawah untuk langsung membuat <b>Draft Stok Opname Beecloud</b> &amp; kirim laporan ke grup.
+              </div>
+              <button type="button" class="btn-submit" style="width:100%; padding:15px; font-size:16px;" onclick="openPinModal()">🚀 Kirim &amp; Buat Draft Beecloud</button>
+              <div style="display:flex; gap:8px; margin-top:10px;">
+                <button type="button" class="btn-sec" style="flex:1;" onclick="goStep(${items.length - 1})">⬅️ Cek Item Terakhir</button>
+                <button type="button" class="btn-sec" style="flex:1;" onclick="setTab('review')">✅ Lihat Ringkasan</button>
+              </div>
+            </div>
+          `;
+        }
+        updateSummary();
+        return;
+      }
+
+      const it = items[stepIdx];
+      const cur = entries[it._idx] || { vals: {}, note: "" };
+      const qtyFisik = calcConverted(it, cur.vals);
+      const hasVal = qtyFisik !== null;
+      const inputs = it.inputs || ["qty"];
+      const perBendel = getEggtrayBendelSize(it);
+      const unitLbl = perBendel > 0 ? `BENDEL (1 Bendel = ${perBendel} Lembar)` : (it.unit_label || "").toUpperCase();
+      const showSys = ACCESS.is_admin_or_manager;
+
+      let calcClass = "", calcText = "Isi jumlah fisik di lapangan (kosong = lewati, 0 = stok habis)";
+      if (hasVal) {
+        const cInfo = formatCalcLineText(it, qtyFisik, showSys, cur.vals);
+        calcClass = cInfo.calcClass;
+        calcText = cInfo.html || cInfo.text;
+      }
+
+      const fieldsHtml = inputs.map((f, fIdx) => `
+        <div class="field">
+          <label>${f}</label>
+          <input type="number" step="any" min="0" inputmode="decimal"
+            enterkeyhint="${fIdx < inputs.length - 1 ? "next" : "next"}"
+            data-fidx="${fIdx}"
+            placeholder="0"
+            value="${cur.vals[f] !== undefined ? cur.vals[f] : ""}"
+            oninput="onFieldInput(${it._idx}, '${f}', this.value)"
+            onkeydown="onStepInputKey(event, ${fIdx}, ${inputs.length})" />
+        </div>
+      `).join("");
+
+      const cardHtml = `
+        <div class="card game-card">
+          ${it.tag ? `<div class="tag-pill">${it.tag}</div>` : ""}
+          <div class="item-head">
+            <div>
+              <div class="item-name">${it.itemname}</div>
+              <div class="item-code">Kode: ${it.itemcode} • Satuan: ${unitLbl || "UNIT"}</div>
+            </div>
+            ${(showSys && it.qty) ? `<div class="sys-pill">Sistem: ${it.qty}</div>` : `<div class="sys-pill">${stepIdx + 1}/${items.length}</div>`}
+          </div>
+          <div class="multi-grid">${fieldsHtml}</div>
+          <div class="calc-row ${calcClass}" id="calc-${it._idx}">${calcText}</div>
+          <input type="text" class="note-input" placeholder="Catatan kondisi (opsional)"
+            value="${cur.note || ""}"
+            oninput="onNoteInput(${it._idx}, this.value)" />
+          <div id="photo-box-${it._idx}" style="margin-top:8px;">${renderPhotoControlHtml(it, qtyFisik)}</div>
+          <div style="margin-top:10px; font-size:13px; color:var(--muted); text-align:center;">
+            Gunakan tombol <b>Balik / Kosong (0) / Lanjut</b> di bagian bawah layar.
+          </div>
+        </div>
+      `;
+
+      // Append new card BEFORE removing old card and move focus synchronously input -> input
+      // so the mobile soft keyboard never sees a null/blur state and stays open continuously.
+      const prevChildren = Array.from(box.children);
+      const tmp = document.createElement("div");
+      tmp.innerHTML = cardHtml.trim();
+      const nextCard = tmp.firstElementChild;
+      box.appendChild(nextCard);
+
+      if (shouldFocusFirst) {
+        const firstInp = nextCard.querySelector(".multi-grid input");
+        if (firstInp) {
+          firstInp.focus({ preventScroll: true });
+        }
+      }
+      prevChildren.forEach(ch => ch.remove());
+
+      updateHud();
+      updateSummary();
+    }
+
+    window.onStepInputKey = function(ev, fIdx, totalFields) {
+      if (ev.key !== "Enter") return;
+      ev.preventDefault();
+      const box = document.getElementById("gameContainer");
+      const all = box.querySelectorAll(".multi-grid input");
+      if (fIdx + 1 < totalFields && all[fIdx + 1]) {
+        all[fIdx + 1].focus({ preventScroll: true });
+      } else {
+        nextStep();
+      }
+    };
+
+    window.goStep = function(idx) {
+      stepIdx = Math.max(0, Math.min(items.length, idx));
+      renderGameStep(true);
+    };
+
+    window.nextStep = function() {
+      if (stepIdx >= items.length) {
+        const unfilled = getUnfilledItems();
+        if (unfilled.length > 0) {
+          goStep(unfilled[0]._idx);
+          return;
+        }
+      }
+      stepIdx = Math.min(items.length, stepIdx + 1);
+      renderGameStep(true);
+    };
+
+    window.skipStep = function(itemIdx) {
+      if (!entries[itemIdx]) entries[itemIdx] = { vals: {}, note: "" };
+      const it = items[itemIdx];
+      const f0 = (it.inputs && it.inputs[0]) || "qty";
+      if (entries[itemIdx].vals[f0] === undefined || entries[itemIdx].vals[f0] === "") {
+        entries[itemIdx].vals[f0] = "0";
+      }
+      nextStep();
+    };
+
+    function renderList() {
+      const q = document.getElementById("searchBox").value.trim().toLowerCase();
+      const filter = document.getElementById("filterBox").value;
+      const listEl = document.getElementById("itemList");
+
+      const filtered = items.filter(it => {
+        const matchQ = !q || it.itemname.toLowerCase().includes(q) || String(it.itemcode).toLowerCase().includes(q) || String(it.pilot_code || "").toLowerCase().includes(q);
+        if (!matchQ) return false;
+        const val = calcConverted(it, (entries[it._idx] || {}).vals || {});
+        if (filter === "filled") return val !== null;
+        if (filter === "unfilled") return val === null;
+        return true;
+      });
+
+      if (!filtered.length) { listEl.innerHTML = `<div class="state-msg">Tidak ada barang yang cocok.</div>`; updateSummary(); return; }
+
+      const showSys = ACCESS.is_admin_or_manager;
+      listEl.innerHTML = filtered.map(it => {
+        const cur = entries[it._idx] || { vals: {}, note: "" };
+        const qtyFisik = calcConverted(it, cur.vals);
+        const hasVal = qtyFisik !== null;
+        const inputs = it.inputs || ["qty"];
+        const perBendel = getEggtrayBendelSize(it);
+        const unitLbl = perBendel > 0 ? "BENDEL" : (it.unit_label || "").toUpperCase();
+
+        let calcClass = "", calcText = "Belum dihitung (kosong = lewati, isi 0 jika habis)";
+        if (hasVal) {
+          const cInfo = formatCalcLineText(it, qtyFisik, showSys, cur.vals);
+          calcClass = cInfo.calcClass;
+          calcText = cInfo.html || cInfo.text;
+        }
+
+        const fieldsHtml = inputs.map(f => `
+          <div class="field">
+            <label>${f}</label>
+            <input type="number" step="any" min="0" inputmode="decimal" placeholder="0"
+              value="${cur.vals[f] !== undefined ? cur.vals[f] : ""}"
+              oninput="onFieldInput(${it._idx}, '${f}', this.value)" />
+          </div>
+        `).join("");
+
+        return `
+          <div class="card ${hasVal ? "filled" : ""}" id="card-${it._idx}">
+            <div class="item-head">
+              <div>
+                <div class="item-name">${it.tag ? it.tag + " · " : ""}${it.itemname}</div>
+                <div class="item-code">Kode: ${it.itemcode} • ID: ${it.item_id}</div>
+              </div>
+              ${(showSys && it.qty) ? `<div class="sys-pill">Sistem: ${it.qty}</div>` : `<div class="sys-pill">${unitLbl || "UNIT"}</div>`}
+            </div>
+            <div class="multi-grid">${fieldsHtml}</div>
+            <div class="calc-row ${calcClass}" id="calc-${it._idx}">${calcText}</div>
+            <input type="text" class="note-input" placeholder="Catatan kondisi (opsional)"
+              value="${cur.note || ""}"
+              oninput="onNoteInput(${it._idx}, this.value)" />
+            <div id="photo-box-${it._idx}" style="margin-top:8px;">${renderPhotoControlHtml(it, qtyFisik)}</div>
+          </div>
+        `;
+      }).join("");
+      updateSummary();
+    }
+
+    function renderStockOnly() {
+      const el = document.getElementById("stockLiveList");
+      if (!ACCESS.is_admin_or_manager) { el.innerHTML = `<div class="state-msg">Khusus Admin / Manajer.</div>`; return; }
+      if (!currentWh) { el.innerHTML = `<div class="state-msg">Pilih gudang terlebih dahulu.</div>`; return; }
+      el.innerHTML = items.map(it => `
+        <div class="card">
+          <div class="item-head">
+            <div><div class="item-name">${it.itemname}</div><div class="item-code">Kode: ${it.itemcode}</div></div>
+            <div class="sys-pill">${it.qty || "0"}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPhotoControlHtml(it, qtyFisik) {
+      const ph = photosByIdx[it._idx];
+      if (ph) {
+        return `
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:10px;">
+            <img src="${ph.dataUrl}" alt="Bukti Foto" style="width:52px; height:52px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" />
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:12.5px; font-weight:800; color:#166534;">✅ Foto Kamera Langsung + Watermark (${ph.captured_at})</div>
+              <div style="display:flex; gap:6px; margin-top:5px;">
+                <button type="button" tabindex="-1" onmousedown="event.preventDefault()" class="btn-sec" style="padding:5px 9px; font-size:12px;" onclick="triggerItemCamera(${it._idx})">🔄 Foto Ulang</button>
+                <button type="button" tabindex="-1" onmousedown="event.preventDefault()" class="btn-danger" style="padding:5px 9px; font-size:12px;" onclick="removeItemPhoto(${it._idx})">🗑️ Hapus</button>
+              </div>
+            </div>
+          </div>`;
+      }
+      const hint = qtyFisik !== null && Number(qtyFisik) > 0 ? " • Disarankan" : "";
+      return `
+        <button type="button" tabindex="-1" onmousedown="event.preventDefault()" class="btn-sec"
+          style="width:100%; padding:9px 10px; font-size:13px; border:1.5px dashed #8fa996; background:#f8fbf7;"
+          onclick="triggerItemCamera(${it._idx})">📷 Ambil Foto Langsung (Opsional${hint})</button>`;
+    }
+
+    function stopLiveCameraStream() {
+      if (activeCamStream) {
+        try {
+          activeCamStream.getTracks().forEach(t => {
+            try { t.stop(); } catch (e) {}
+          });
+        } catch (e) {}
+        activeCamStream = null;
+      }
+      const videoEl = document.getElementById("liveCamVideo");
+      if (videoEl) {
+        try { videoEl.pause(); } catch (e) {}
+        try { videoEl.srcObject = null; } catch (e) {}
+      }
+    }
+
+    function setLiveCamStatus(msg, showRetry) {
+      const box = document.getElementById("liveCamStatus");
+      const txt = document.getElementById("liveCamStatusText");
+      const btn = document.getElementById("liveCamRetryBtn");
+      if (!box || !txt || !btn) return;
+      if (!msg) {
+        box.classList.add("hidden");
+        btn.classList.add("hidden");
+        txt.textContent = "";
+        return;
+      }
+      txt.textContent = msg;
+      box.classList.remove("hidden");
+      btn.classList.toggle("hidden", !showRetry);
+    }
+
+    function updateLiveCamFacingBadge() {
+      const badge = document.getElementById("liveCamFacingBadge");
+      if (!badge) return;
+      badge.textContent = liveCamFacing === "environment" ? "🔴 LIVE · Belakang" : "🔴 LIVE · Depan";
+    }
+
+    function waitForVideoReady(videoEl, token, timeoutMs) {
+      return new Promise(resolve => {
+        if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+          resolve(true);
+          return;
+        }
+        let settled = false;
+        const done = ok => {
+          if (settled) return;
+          settled = true;
+          clearInterval(pollTimer);
+          clearTimeout(maxTimer);
+          videoEl.removeEventListener("loadedmetadata", checkReady);
+          videoEl.removeEventListener("playing", checkReady);
+          resolve(ok);
+        };
+        const checkReady = () => {
+          if (token !== liveCamRequestToken) { done(false); return; }
+          if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) done(true);
+        };
+        videoEl.addEventListener("loadedmetadata", checkReady);
+        videoEl.addEventListener("playing", checkReady);
+        const pollTimer = setInterval(checkReady, 100);
+        const maxTimer = setTimeout(() => done(videoEl.videoWidth > 0 && videoEl.videoHeight > 0), timeoutMs || 3000);
+      });
+    }
+
+    async function startLiveCamera(idx) {
+      const myToken = ++liveCamRequestToken;
+      stopLiveCameraStream();
+      liveCamTargetIdx = idx;
+
+      const it = items.find(x => x._idx === idx);
+      const titleEl = document.getElementById("liveCamTitle");
+      const subEl = document.getElementById("liveCamSubtitle");
+      const capBtn = document.getElementById("liveCamCaptureBtn");
+      const modalEl = document.getElementById("liveCamModal");
+      const videoEl = document.getElementById("liveCamVideo");
+
+      if (titleEl) titleEl.textContent = `📷 ${it ? it.itemname : "Kamera Langsung"}`;
+      if (subEl) subEl.textContent = `${currentWh ? currentWh.name : "Stok Opname"} • Watermark WIB otomatis`;
+      updateLiveCamFacingBadge();
+
+      if (capBtn) {
+        capBtn.disabled = true;
+        capBtn.textContent = "⏳ Memuat...";
+      }
+      if (modalEl) modalEl.classList.remove("hidden");
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setLiveCamStatus("⚠️ Perangkat/Telegram WebView ini belum mendukung kamera langsung (getUserMedia). Pastikan aplikasi Telegram versi terbaru dan dibuka lewat HTTPS.", true);
+        if (capBtn) capBtn.textContent = "📸 JEPRET";
+        return;
+      }
+
+      setLiveCamStatus("⏳ Membuka kamera langsung...\nJika muncul permintaan izin kamera dari Telegram, tekan Izinkan (Allow).", false);
+
+      try {
+        const attempts = [
+          { video: { facingMode: { ideal: liveCamFacing }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false },
+          { video: { facingMode: liveCamFacing }, audio: false },
+          { video: true, audio: false }
+        ];
+        let stream = null;
+        let lastErr = null;
+        for (let i = 0; i < attempts.length; i++) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia(attempts[i]);
+            break;
+          } catch (e) {
+            lastErr = e;
+            const en = (e && e.name) || "";
+            const canRetryFallback = (en === "OverconstrainedError" || en === "ConstraintNotSatisfiedError" || (en === "NotFoundError" && i < attempts.length - 1));
+            if (!canRetryFallback) throw e;
+          }
+        }
+        if (!stream) throw (lastErr || new Error("Gagal membuka kamera"));
+
+        if (myToken !== liveCamRequestToken) {
+          stream.getTracks().forEach(t => {
+            try { t.stop(); } catch (e) {}
+          });
+          return;
+        }
+
+        activeCamStream = stream;
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        videoEl.setAttribute("playsinline", "");
+        videoEl.setAttribute("muted", "");
+        videoEl.srcObject = stream;
+        await videoEl.play().catch(() => {});
+
+        const ready = await waitForVideoReady(videoEl, myToken, 3000);
+        if (myToken !== liveCamRequestToken) return;
+
+        if (!ready) {
+          setLiveCamStatus("⚠️ Kamera terbuka tetapi gambar belum muncul. Tutup aplikasi kamera lain lalu tekan \"Coba Buka Kamera Lagi\".", true);
+          if (capBtn) capBtn.textContent = "📸 JEPRET";
+          return;
+        }
+
+        setLiveCamStatus("", false);
+        if (capBtn) {
+          capBtn.disabled = false;
+          capBtn.textContent = "📸 JEPRET";
+        }
+      } catch (err) {
+        if (myToken !== liveCamRequestToken) return;
+        stopLiveCameraStream();
+        const errName = (err && err.name) || "";
+        let msg = "";
+        if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
+          msg = "🔒 Izin kamera ditolak oleh Telegram / HP.\nBuka Pengaturan HP → Aplikasi → Telegram → Izin → Kamera → pilih Izinkan, lalu tekan \"Coba Buka Kamera Lagi\".";
+        } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
+          msg = "📷 Kamera tidak ditemukan pada perangkat ini.";
+        } else if (errName === "NotReadableError" || errName === "TrackStartError") {
+          msg = "⚠️ Kamera sedang dipakai aplikasi lain. Tutup aplikasi tersebut lalu tekan \"Coba Buka Kamera Lagi\".";
+        } else {
+          msg = `⚠️ Gagal membuka kamera (${errName || "Error"}): ${(err && err.message) || "Periksa izin kamera Telegram."}`;
+        }
+        setLiveCamStatus(msg, true);
+        if (capBtn) {
+          capBtn.disabled = true;
+          capBtn.textContent = "📸 JEPRET";
+        }
+      }
+    }
+
+    window.triggerItemCamera = function(idx) {
+      if (!photosByIdx[idx] && Object.keys(photosByIdx).length >= MAX_PHOTOS_PER_SUBMIT) {
+        safeAlert("Maksimal 10 foto bukti per sesi SO agar pengiriman tetap cepat.");
+        return;
+      }
+      if (document.activeElement && typeof document.activeElement.blur === "function") {
+        document.activeElement.blur();
+      }
+      liveCamFacing = "environment";
+      startLiveCamera(idx);
+    };
+
+    window.retryLiveCamera = function() {
+      if (liveCamTargetIdx !== null) startLiveCamera(liveCamTargetIdx);
+    };
+
+    window.switchLiveCamera = function() {
+      liveCamFacing = liveCamFacing === "environment" ? "user" : "environment";
+      if (liveCamTargetIdx !== null) startLiveCamera(liveCamTargetIdx);
+    };
+
+    window.closeLiveCamera = function() {
+      liveCamRequestToken++;
+      stopLiveCameraStream();
+      liveCamTargetIdx = null;
+      const modalEl = document.getElementById("liveCamModal");
+      if (modalEl) modalEl.classList.add("hidden");
+      setLiveCamStatus("", false);
+    };
+
+    function applyWatermarkAndSavePhoto(idx, sourceEl, srcW, srcH) {
+      const it = items.find(x => x._idx === idx);
+      if (!it) return false;
+      const maxW = 960;
+      const maxH = 1280;
+      let w = srcW || 960;
+      let h = srcH || 720;
+      const ratio = Math.min(maxW / w, maxH / h, 1);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(sourceEl, 0, 0, w, h);
+
+      const cur = entries[idx] || { vals: {}, note: "" };
+      const qtyFisik = calcConverted(it, cur.vals || {});
+      const qtyDisp = qtyFisik !== null ? formatItemQtyDisplay(it, qtyFisik, false) : "";
+      const empName = getActiveCheckerEmployee() || CHECKER_NAME;
+      const soSess = document.getElementById("soSession").value || "SO";
+      const nowObj = new Date();
+      const waktuWib = nowObj.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+      const jamWib = nowObj.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
+
+      const barH = Math.max(84, Math.round(h * 0.16));
+      const barY = h - barH;
+      ctx.fillStyle = "rgba(15, 32, 24, 0.80)";
+      ctx.fillRect(0, barY, w, barH);
+
+      const fs1 = Math.max(15, Math.round(w * 0.025));
+      const fs2 = Math.max(13, Math.round(w * 0.021));
+      const fs3 = Math.max(12, Math.round(w * 0.018));
+      const padX = Math.max(12, Math.round(w * 0.022));
+
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#d8f8a8";
+      ctx.font = `bold ${fs1}px sans-serif`;
+      const l1 = `🏪 ${currentWh ? currentWh.name : ""} • ${it.itemname}${qtyDisp ? " (" + qtyDisp + ")" : ""}`;
+      ctx.fillText(l1, padX, barY + barH * 0.25, w - padX * 2);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${fs2}px sans-serif`;
+      const l2 = `👤 ${empName} • 🕒 ${waktuWib} WIB • ${soSess}`;
+      ctx.fillText(l2, padX, barY + barH * 0.56, w - padX * 2);
+
+      ctx.fillStyle = "#cce5d5";
+      ctx.font = `${fs3}px sans-serif`;
+      ctx.fillText("INVENTORY LJ GROUP • Foto Kamera Langsung", padX, barY + barH * 0.83, w - padX * 2);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.68);
+      photosByIdx[idx] = {
+        dataUrl,
+        base64: dataUrl.split(",")[1],
+        captured_at: jamWib,
+        item_id: it.item_id,
+        itemname: it.itemname,
+        qty_display: qtyDisp
+      };
+      const pb = document.getElementById("photo-box-" + idx);
+      if (pb) pb.innerHTML = renderPhotoControlHtml(it, qtyFisik);
+      if (!document.getElementById("viewReview").classList.contains("hidden")) renderReview();
+      updateSummary();
+      return true;
+    }
+
+    window.captureLiveCameraPhoto = function() {
+      const videoEl = document.getElementById("liveCamVideo");
+      if (liveCamTargetIdx === null || !activeCamStream || !videoEl || !videoEl.videoWidth || !videoEl.videoHeight) {
+        setLiveCamStatus("⏳ Kamera sedang menyiapkan gambar, tunggu sebentar...", false);
+        return;
+      }
+      const saved = applyWatermarkAndSavePhoto(liveCamTargetIdx, videoEl, videoEl.videoWidth, videoEl.videoHeight);
+      if (saved) {
+        try {
+          if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+        } catch (e) {}
+        closeLiveCamera();
+      }
+    };
+
+    window.removeItemPhoto = function(idx) {
+      delete photosByIdx[idx];
+      if (viewMode === "game") renderGameStep(false);
+      else renderList();
+      if (!document.getElementById("viewReview").classList.contains("hidden")) renderReview();
+      updateSummary();
+    };
+
+    function renderReview() {
+      const el = document.getElementById("reviewList");
+      if (currentDailySo && (currentDailySo.locked || Number(currentDailySo.count || 0) >= 2)) {
+        el.innerHTML = `<div class="state-msg" style="color:#c5221f; font-weight:700;">🔒 Akses hitung &amp; kirim di ${currentWh ? currentWh.name : "gudang ini"} terkunci hari ini (sudah mencapai 2/2 input).</div>`;
+        return;
+      }
+      const filled = getFilledItems();
+      if (!filled.length) { el.innerHTML = `<div class="state-msg">Belum ada item yang diisi di ${currentWh ? currentWh.name : "gudang ini"}.</div>`; return; }
+      el.innerHTML = filled.map((it, idx) => {
+        const dispQty = formatItemQtyDisplay(it, it.qty_fisik, false);
+        const ph = it._idx !== undefined ? photosByIdx[it._idx] : null;
+        return `
+        <div class="card filled">
+          <div class="item-head">
+            <div>
+              <div class="item-name">${idx + 1}. ${it.itemname}</div>
+              <div class="item-code">Total Hitungan: <b>${dispQty}</b></div>
+              ${it.note ? `<div class="item-code">Catatan: ${it.note}</div>` : ""}
+              ${ph ? `<div style="margin-top:6px; display:flex; align-items:center; gap:8px;"><img src="${ph.dataUrl}" style="width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #86efac;" /><span style="font-size:12px; font-weight:700; color:#166534;">📷 Foto bukti (${ph.captured_at})</span></div>` : ""}
+            </div>
+            <div class="sys-pill">${dispQty}</div>
+          </div>
+        </div>
+      `;
+      }).join("");
+    }
+
+    const HIST_LOCAL_KEY = "ljg_so_history_7d_v1";
+
+    function saveLocalHistoryEntry(entry) {
+      try {
+        const cutoffIso = new Date(Date.now() + 7 * 3600 * 1000 - 6 * 86400 * 1000).toISOString().slice(0, 10);
+        const raw = JSON.parse(localStorage.getItem(HIST_LOCAL_KEY) || "[]");
+        const clean = (Array.isArray(raw) ? raw : []).filter(x => x && (!x.date_iso || x.date_iso >= cutoffIso));
+        clean.unshift(entry);
+        localStorage.setItem(HIST_LOCAL_KEY, JSON.stringify(clean.slice(0, 80)));
+      } catch (e) {}
+    }
+
+    function getCombinedHistory7d() {
+      const cutoffIso = new Date(Date.now() + 7 * 3600 * 1000 - 6 * 86400 * 1000).toISOString().slice(0, 10);
+      const serverList = Array.isArray(ACCESS.history_7d) ? ACCESS.history_7d : [];
+      let localList = [];
+      try {
+        localList = JSON.parse(localStorage.getItem(HIST_LOCAL_KEY) || "[]");
+        if (!Array.isArray(localList)) localList = [];
+      } catch (e) { localList = []; }
+
+      const allowed = ACCESS.allowed_keys || [];
+      const seen = new Set();
+      const merged = [];
+      for (const s of [...serverList, ...localList]) {
+        if (!s) continue;
+        if (s.date_iso && s.date_iso < cutoffIso) continue;
+        if (s.wh_key && allowed.length && !allowed.includes(s.wh_key)) continue;
+        const key = `${s.waktu || ""}|${s.wh_name || ""}|${s.trxno || ""}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(s);
+      }
+      const tabBtn = document.getElementById("tabHistory");
+      if (tabBtn) tabBtn.textContent = `🕒 Memori 7H${merged.length ? ` (${merged.length})` : ""}`;
+      return merged;
+    }
+
+    window.refreshHistory7d = async function() {
+      const listEl = document.getElementById("history7dList");
+      if (listEl) listEl.innerHTML = `<div class="state-msg">Memuat ulang memori 7 hari dari server...</div>`;
+      try {
+        const res = await fetch(`${API_BASE}/inventory-access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "check_access", user_id: USER_ID, nama: CHECKER_NAME, username: USERNAME })
+        });
+        const data = await res.json();
+        if (data && data.ok) {
+          ACCESS.history_7d = data.history_7d || [];
+          ACCESS.daily_counts = data.daily_counts || ACCESS.daily_counts || {};
+          renderWarehouseGrid();
+        }
+      } catch (e) {}
+      renderHistory7d();
+    };
+
+    window.toggleHistDetail = function(idx) {
+      const el = document.getElementById(`hist-detail-${idx}`);
+      const btn = document.getElementById(`hist-btn-${idx}`);
+      if (!el) return;
+      const isHidden = el.classList.toggle("hidden");
+      if (btn) btn.textContent = isHidden ? "▼ Lihat Rincian Item & Bobot KG / Bendel" : "▲ Sembunyikan Rincian Item";
+    };
+
+    function renderHistory7d() {
+      const listEl = document.getElementById("history7dList");
+      const whSel = document.getElementById("histWhFilter");
+      const dtSel = document.getElementById("histDateFilter");
+      if (!listEl) return;
+
+      const allHist = getCombinedHistory7d();
+
+      if (whSel && whSel.options.length <= 1 && visibleWarehouses.length) {
+        const curVal = whSel.value || "all";
+        whSel.innerHTML = `<option value="all">Semua Gudang (${visibleWarehouses.length})</option>` +
+          visibleWarehouses.map(w => `<option value="${w.key}">${w.name}</option>`).join("");
+        whSel.value = curVal;
+      }
+
+      if (dtSel) {
+        const curDt = dtSel.value || "all";
+        const uniqueDates = Array.from(new Set(allHist.map(s => s.date_iso).filter(Boolean))).sort().reverse();
+        dtSel.innerHTML = `<option value="all">Semua (7 Hari Terakhir)</option>` +
+          uniqueDates.map(d => `<option value="${d}">${d}</option>`).join("");
+        if (uniqueDates.includes(curDt)) dtSel.value = curDt;
+      }
+
+      const fWh = whSel ? whSel.value : "all";
+      const fDt = dtSel ? dtSel.value : "all";
+      const filtered = allHist.filter(s => {
+        if (fWh !== "all" && s.wh_key !== fWh) return false;
+        if (fDt !== "all" && s.date_iso !== fDt) return false;
+        return true;
+      });
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div class="state-msg">Belum ada riwayat input stok opname dalam 7 hari terakhir${fWh !== "all" ? " untuk filter gudang ini" : ""}.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((s, idx) => {
+        const itemsArr = Array.isArray(s.items) ? s.items : [];
+        const klopCount = itemsArr.filter(it => Math.abs(Number(it.selisih || 0)) < 1e-6).length;
+        const diffCount = itemsArr.length - klopCount;
+
+        const itemsHtml = itemsArr.map((it, iIdx) => {
+          const fakeItem = { item_id: it.item_id, unit_label: it.unit_label };
+          const fisikDisp = it.fisik_display || formatItemQtyDisplay(fakeItem, it.qty_fisik, false);
+          const hasSelisih = it.selisih !== undefined && it.selisih !== "" && it.selisih !== null;
+          const selVal = Number(it.selisih || 0);
+          const selDisp = it.selisih_display || (hasSelisih ? formatItemQtyDisplay(fakeItem, selVal, true) : "-");
+          const selColor = !hasSelisih ? "var(--muted)" : (Math.abs(selVal) < 1e-6 ? "#137333" : (selVal < 0 ? "#c5221f" : "#b06000"));
+          return `
+            <div style="padding:8px 0; border-bottom:1px dashed #d6dfd2; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <div style="flex:1;">
+                <div style="font-weight:800; font-size:13.5px; color:var(--text);">${iIdx + 1}. ${it.itemname || "-"}</div>
+                ${it.note ? `<div style="font-size:12px; color:var(--muted);"><i>Catatan: ${it.note}</i></div>` : ""}
+              </div>
+              <div style="text-align:right; min-width:120px;">
+                <div style="font-weight:800; font-size:14px; color:#0d5c2f;">⚖️ ${fisikDisp}</div>
+                <div style="font-size:11.5px; font-weight:700; color:${selColor};">Selisih: ${selDisp}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="card" style="margin-bottom:10px; border-left:4px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <div style="font-weight:800; font-size:15px; color:var(--primary);">${s.wh_name || "-"} • <span style="color:#0d5c2f;">${s.session || "SO"}</span></div>
+                <div style="font-size:12.5px; color:var(--muted); margin-top:2px;">
+                  🕒 <b>${s.waktu || "-"} WIB</b> • 👤 Checker: <b>${s.checker_name || "-"}</b>
+                </div>
+                <div style="font-size:12px; color:var(--muted); margin-top:2px;">
+                  🧾 Draft Beecloud: <b>${s.trxno || "DRAFT"}</b> • 📦 <b>${itemsArr.length} produk</b> (✅ ${klopCount} klop${diffCount ? `, ⚠️ ${diffCount} selisih` : ""})
+                </div>
+              </div>
+            </div>
+            <button id="hist-btn-${idx}" class="btn-sec" style="width:100%; margin-top:9px; padding:8px 10px; font-size:12.5px;" onclick="toggleHistDetail(${idx})">▼ Lihat Rincian Item &amp; Bobot KG / Bendel</button>
+            <div id="hist-detail-${idx}" class="hidden" style="margin-top:8px; background:#f7faf6; border-radius:10px; padding:6px 10px;">
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderUsersList() {
+      const el = document.getElementById("usersList");
+      const list = ACCESS.users || [];
+      if (!list.length) { el.innerHTML = `<div class="state-msg">Belum ada user terdaftar.</div>`; return; }
+      el.innerHTML = list.map(u => `
+        <div class="card" style="margin-bottom:8px;">
+          <div class="item-head">
+            <div>
+              <div class="item-name" style="font-size:15px;">${u.nama || "Tanpa Nama"} ${u.username ? "(@" + u.username + ")" : ""}</div>
+              <div class="item-code">ID: <b>${u.user_id}</b> • Role: <b>${u.role}</b> • Gudang: <b>${u.gudang}</b></div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-sec" style="padding:6px 9px; font-size:12px;" onclick="prefillAccess('${u.user_id}','${(u.nama||"").replace(/'/g,"")}','${u.role}','${u.gudang}')">Edit</button>
+              ${u.role === "pending" ? `<button class="btn-submit" style="padding:6px 9px; font-size:12px;" onclick="quickApproveKetapang('${u.user_id}','${(u.nama||"").replace(/'/g,"")}')">+ Ketapang</button>` : ""}
+              ${!u.seeded ? `<button class="btn-danger" onclick="deleteUserAccess('${u.user_id}')">Hapus</button>` : ""}
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    window.prefillAccess = function(uid, nama, role, gudang) {
+      document.getElementById("accUid").value = uid;
+      document.getElementById("accName").value = nama;
+      document.getElementById("accRole").value = role === "pending" ? "petugas" : role;
+      document.getElementById("accGudang").value = gudang === "none" ? "ketapang" : gudang;
+    };
+
+    window.quickApproveKetapang = async function(uid, nama) {
+      document.getElementById("accUid").value = uid;
+      document.getElementById("accName").value = nama;
+      document.getElementById("accRole").value = "petugas";
+      document.getElementById("accGudang").value = "ketapang";
+      await saveUserAccess();
+    };
+
+    window.saveUserAccess = async function() {
+      const targetId = document.getElementById("accUid").value.trim();
+      const targetName = document.getElementById("accName").value.trim() || "Tim Lapangan";
+      const targetRole = document.getElementById("accRole").value;
+      const targetGudang = document.getElementById("accGudang").value;
+      if (!targetId) { alert("Isi Telegram User ID dulu."); return; }
+      try {
+        const res = await fetch(`${API_BASE}/inventory-access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "upsert_user",
+            requester_id: USER_ID,
+            target_id: targetId,
+            nama: targetName,
+            pin_6: (document.getElementById("accPin6") ? document.getElementById("accPin6").value.trim() : ""),
+            role: targetRole,
+            gudang: (targetRole === "admin" || targetRole === "manajer") ? "all" : targetGudang
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Gagal simpan akses");
+        ACCESS.users = data.users || [];
+        renderUsersList();
+        document.getElementById("accUid").value = "";
+        document.getElementById("accName").value = "";
+        if (tg) tg.showAlert(`Akses ${targetName} (${targetId}) → ${targetGudang} tersimpan!`);
+        else alert(`Akses ${targetName} tersimpan!`);
+      } catch (err) {
+        if (tg) tg.showAlert("Error: " + err.message); else alert("Error: " + err.message);
+      }
+    };
+
+    window.deleteUserAccess = async function(targetId) {
+      if (!confirm(`Hapus akses untuk User ID ${targetId}?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/inventory-access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete_user", requester_id: USER_ID, target_id: targetId })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Gagal hapus akses");
+        ACCESS.users = data.users || [];
+        renderUsersList();
+      } catch (err) {
+        if (tg) tg.showAlert("Error: " + err.message); else alert("Error: " + err.message);
+      }
+    };
+
+    window.onFieldInput = function(idx, field, val) {
+      if (!entries[idx]) entries[idx] = { vals: {}, note: "" };
+      entries[idx].vals[field] = val;
+      const item = items[idx];
+      const qtyFisik = calcConverted(item, entries[idx].vals);
+      const calcEl = document.getElementById(`calc-${idx}`);
+      const cardEl = document.getElementById(`card-${idx}`);
+      const unitLbl = (item.unit_label || "").toUpperCase();
+
+      if (calcEl) {
+        if (qtyFisik === null) {
+          calcEl.className = "calc-row";
+          calcEl.textContent = "Isi jumlah fisik di lapangan (kosong = lewati, 0 = stok habis)";
+          if (cardEl) cardEl.classList.remove("filled");
+        } else {
+          if (cardEl) cardEl.classList.add("filled");
+          const cInfo = formatCalcLineText(item, qtyFisik, ACCESS.is_admin_or_manager, entries[idx].vals);
+          calcEl.className = "calc-row " + cInfo.calcClass;
+          calcEl.innerHTML = cInfo.html || cInfo.text;
+        }
+      }
+      updateHud();
+      updateSummary();
+    };
+
+    window.onNoteInput = function(idx, val) {
+      if (!entries[idx]) entries[idx] = { vals: {}, note: "" };
+      entries[idx].note = val;
+    };
+
+    window.skipCurrentStep = function() {
+      if (!items.length || stepIdx >= items.length) return;
+      skipStep(items[stepIdx]._idx);
+    };
+
+    window.confirmResetEntries = function() {
+      if (!confirm("Yakin ingin mereset semua data hitungan yang sudah diisi? Semua input akan dikosongkan.")) return;
+      entries = {};
+      photosByIdx = {};
+      stepIdx = 0;
+      if (currentWh) {
+        if (viewMode === "game") renderGameStep(); else renderList();
+      }
+      updateSummary();
+    };
+
+    function getFilledItems() {
+      const out = [];
+      for (const it of items) {
+        const cur = entries[it._idx];
+        if (!cur) continue;
+        const qtyFisik = calcConverted(it, cur.vals);
+        if (qtyFisik === null) continue;
+        out.push({
+          _idx: it._idx,
+          pilot_code: it.pilot_code,
+          item_id: it.item_id,
+          itemcode: it.itemcode,
+          itemname: it.itemname,
+          unit_label: it.unit_label || "",
+          breakdown: formatBreakdown(it, cur.vals),
+          qty_fisik: qtyFisik,
+          note: (cur.note || "").trim()
+        });
+      }
+      return out;
+    }
+
+    function updateSummary() {
+      const filled = getFilledItems();
+      const total = items.length;
+      const photoCount = Object.keys(photosByIdx).length;
+      const photoSuffix = photoCount > 0 ? ` · 📷 ${photoCount} foto` : "";
+      const isFull = total > 0 && filled.length >= total;
+      const inInputTab = !document.getElementById("viewInput").classList.contains("hidden");
+      const inReviewTab = !document.getElementById("viewReview").classList.contains("hidden");
+
+      const isLocked = Boolean(currentDailySo && (currentDailySo.locked || Number(currentDailySo.count || 0) >= 2));
+
+      document.getElementById("summaryText").innerHTML = isLocked
+        ? `<span style="color:#c5221f; font-weight:800;">🔒 Terkunci (2/2) · ${currentWh ? currentWh.name : ""}</span><span style="color:var(--muted); font-size:12px;">Maks 2x/hari</span>`
+        : `<span><strong>${filled.length}/${total}</strong> item terisi${currentWh ? ` · ${currentWh.name}` : ""}${photoSuffix}</span>` +
+          `<span style="color:${isFull ? "var(--ok-text)" : "var(--muted)"}; font-size:12px; font-weight:700;">${isFull ? "✅ Penuh — Siap Kirim" : "Isi semua dulu"}</span>`;
+
+      const stepBox = document.getElementById("frozenStepControls");
+      const fullBox = document.getElementById("frozenFullControls");
+
+      if (!currentWh || (!inInputTab && !inReviewTab) || isLocked) {
+        stepBox.classList.add("hidden");
+        fullBox.classList.add("hidden");
+      } else if (isFull) {
+        stepBox.classList.add("hidden");
+        fullBox.classList.remove("hidden");
+      } else {
+        fullBox.classList.add("hidden");
+        stepBox.classList.remove("hidden");
+        const prevBtn = document.getElementById("frzPrevBtn");
+        const nextBtn = document.getElementById("frzNextBtn");
+        if (prevBtn) prevBtn.disabled = stepIdx <= 0;
+        if (nextBtn) nextBtn.textContent = stepIdx >= total - 1 ? "Selesai ✅" : "Lanjut ➡️";
+      }
+      const subBtn = document.getElementById("submitBtn");
+      if (subBtn) subBtn.disabled = !isFull || isLocked;
+    }
+
+    document.getElementById("searchBox").addEventListener("input", renderList);
+    document.getElementById("filterBox").addEventListener("change", renderList);
+
+    window.openPinModal = function() {
+      if (typeof window.closeLiveCamera === "function") window.closeLiveCamera();
+      if (currentDailySo && (currentDailySo.locked || Number(currentDailySo.count || 0) >= 2)) {
+        const msg = `Batas harian tercapai! Akun Anda sudah 2 kali hitung stok hari ini di ${currentWh?.name || "gudang ini"} (maksimal 2x/hari).`;
+        safeAlert(msg);
+        return;
+      }
+      const filled = getFilledItems();
+      if (filled.length < items.length) {
+        stepIdx = items.length;
+        setTab("input");
+        renderGameStep(false);
+        safeAlert(`Masih ada ${items.length - filled.length} produk yang belum diisi (${filled.length}/${items.length}). Tandai 0 terlebih dahulu.`);
+        return;
+      }
+      document.getElementById("pinErrMsg").classList.add("hidden");
+      document.getElementById("pin6Input").value = "";
+      document.getElementById("pinModal").classList.remove("hidden");
+      setTimeout(() => document.getElementById("pin6Input").focus(), 100);
+    };
+
+    window.closePinModal = function() {
+      document.getElementById("pinModal").classList.add("hidden");
+    };
+
+    window.confirmAndSubmitDraft = async function() {
+      const empName = getActiveCheckerEmployee();
+      const pinVal = document.getElementById("pin6Input").value.trim().replace(/\D/g, "");
+      const errEl = document.getElementById("pinErrMsg");
+      if (!empName) {
+        errEl.textContent = "Wajib pilih atau ketik nama pegawai yang melakukan hitung stok!";
+        errEl.classList.remove("hidden");
+        const sel = document.getElementById("pinCheckerSelect");
+        if (sel) sel.focus();
+        return;
+      }
+      if (pinVal.length !== 6) {
+        errEl.textContent = "Wajib masukkan tepat 6 digit angka!";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      const filled = getFilledItems();
+      if (!filled.length || !currentWh) return;
+      const btn = document.getElementById("confirmPinBtn");
+      btn.disabled = true;
+      btn.textContent = "Mengirim ke Beecloud...";
+      errEl.classList.add("hidden");
+
+      const finalCheckerLabel = (CHECKER_NAME && !CHECKER_NAME.toLowerCase().includes(empName.toLowerCase()))
+        ? `${empName} (via ${CHECKER_NAME})`
+        : empName;
+
+      const photosPayload = Object.values(photosByIdx).slice(0, MAX_PHOTOS_PER_SUBMIT).map(ph => ({
+        item_id: ph.item_id,
+        itemname: ph.itemname,
+        base64: ph.base64,
+        captured_at: ph.captured_at,
+        qty_display: ph.qty_display || ""
+      }));
+
+      try {
+        const res = await fetch(`${API_BASE}/inventory-submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wh_key: currentWh.key,
+            wh_id: currentWh.wh_id,
+            branch_id: currentWh.branch_id,
+            wh_name: currentWh.name,
+            session_label: document.getElementById("soSession").value,
+            checker_employee: empName,
+            checker_name: finalCheckerLabel,
+            user_id: USER_ID,
+            chat_id: CHAT_ID,
+            pin_6: pinVal,
+            photos: photosPayload,
+            items: filled
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Gagal membuat Draft Stok Opname");
+
+        if (currentWh) {
+          const newCnt = Number(data.daily_count || ((currentDailySo?.count || 0) + 1));
+          currentDailySo = { ...(currentDailySo || {}), count: newCnt, locked: newCnt >= 2 };
+          ACCESS.daily_counts = { ...(ACCESS.daily_counts || {}), [currentWh.key]: newCnt };
+          const nowWib = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+          const todayIso = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+          const compMap = {};
+          for (const c of (data.comparisons || [])) compMap[Number(c.item_id)] = c;
+          const histEntry = {
+            date_iso: todayIso,
+            waktu: nowWib,
+            session: document.getElementById("soSession").value,
+            wh_key: currentWh.key,
+            wh_name: currentWh.name,
+            wh_id: currentWh.wh_id,
+            checker_name: finalCheckerLabel,
+            user_id: USER_ID,
+            trxno: data.trxno || "DRAFT",
+            items: filled.map(it => {
+              const cm = compMap[Number(it.item_id)] || {};
+              return {
+                code: it.pilot_code || it.itemcode || "",
+                item_id: it.item_id,
+                itemname: it.itemname,
+                breakdown: it.breakdown,
+                qty_fisik: it.qty_fisik,
+                unit_label: it.unit_label,
+                selisih: cm.selisih ?? 0,
+                fisik_display: cm.fisik_display || formatItemQtyDisplay(it, it.qty_fisik, false),
+                selisih_display: cm.selisih_display || formatItemQtyDisplay(it, cm.selisih ?? 0, true),
+                note: it.note || ""
+              };
+            })
+          };
+          saveLocalHistoryEntry(histEntry);
+          ACCESS.history_7d = [histEntry, ...(ACCESS.history_7d || [])];
+          getCombinedHistory7d();
+          renderWarehouseGrid();
+        }
+        closePinModal();
+        showVarianceResultScreen(data);
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🚀 Kirim Draft";
+      }
+    };
+
+    
+    function showVarianceResultScreen(data) {
+      const comps = data.comparisons || [];
+      const hasBigDiff = comps.some(c => Math.abs(Number(c.selisih || 0)) >= 5);
+      const rowsHtml = comps.map(c => {
+        const s = Number(c.selisih || 0);
+        const cls = s === 0 ? "diff-zero" : (Math.abs(s) >= 5 ? "diff-minus" : "diff-plus");
+        const icon = s === 0 ? "✅" : (Math.abs(s) >= 5 ? "🚨" : "⚠️");
+        const fisikLabel = c.fisik_display || formatItemQtyDisplay(c, c.qty_fisik, false);
+        const diffLabel = c.selisih_display || formatItemQtyDisplay(c, s, true);
+        return `
+          <div class="card" style="margin-bottom:8px;">
+            <div class="item-head">
+              <div>
+                <div class="item-name" style="font-size:15px;">${c.itemname}</div>
+                <div class="item-code">Hitungan Fisik Anda: <b>${fisikLabel}</b></div>
+              </div>
+              <div class="calc-row ${cls}" style="margin-top:0; padding:6px 10px;">${icon} ${diffLabel}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("footerBar").classList.add("hidden");
+      document.getElementById("navTabs").classList.add("hidden");
+      document.getElementById("viewWh").classList.add("hidden");
+      document.getElementById("viewReview").classList.add("hidden");
+      document.getElementById("viewUsers").classList.add("hidden");
+      document.getElementById("viewInput").classList.remove("hidden");
+      document.getElementById("listContainer").classList.add("hidden");
+      document.getElementById("dailyReminderBanner").classList.add("hidden");
+      const pickerCard = document.getElementById("checkerPickerCard");
+      if (pickerCard) pickerCard.classList.add("hidden");
+      document.getElementById("gameHud").classList.add("hidden");
+      const gc = document.getElementById("gameContainer");
+      gc.classList.remove("hidden");
+      gc.innerHTML = `
+        <div class="card" style="border:2px solid ${hasBigDiff ? "#c5221f" : "#163828"};">
+          <div style="font-size:19px; font-weight:800; color:${hasBigDiff ? "#c5221f" : "#163828"}; margin-bottom:6px;">
+            ${hasBigDiff ? "🚨 Draft Dibuat — Ada Selisih Cukup Besar!" : "✅ Draft Stok Opname Berhasil Dibuat"}
+          </div>
+          <div style="font-size:14px; color:var(--muted); margin-bottom:10px;">
+            No. Draft Beecloud: <b>${data.trxno || "DRAFT"}</b> · Gudang: <b>${data.wh_name || currentWh.name}</b><br>
+            Laporan dikirim ke: <b>${data.tg_group_label || "Grup Telegram"}</b>${Number(data.photo_count || 0) > 0 ? `<br>📷 <b>${data.photo_count} foto bukti</b> ikut dikirim ke grup.` : ""}
+          </div>
+          ${hasBigDiff ? `
+            <div class="calc-row diff-minus" style="margin-bottom:12px; display:block; line-height:1.45;">
+              ⚠️ <b>Perhatian Tim Lapangan:</b> Ditemukan selisih sementara terhadap sistem Beecloud. Mohon cek ulang apakah ada nota penjualan/pembelian belum terinput, salah satuan, atau barang tercecer di gudang!
+            </div>
+          ` : ""}
+          <div style="font-weight:800; font-size:14.5px; margin-bottom:8px;">Selisih Sementara (Fisik vs Sistem):</div>
+          ${rowsHtml}
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="btn-sec" style="flex:1;" onclick="document.getElementById('navTabs').classList.remove('hidden'); setTab('history');">🕒 Memori 7 Hari</button>
+            <button class="btn-submit" style="flex:1;" onclick="closeMiniApp()">Selesai &amp; Tutup</button>
+          </div>
+        </div>
+      `;
+    }
+    window.closeMiniApp = function() {
+      if (typeof window.closeLiveCamera === "function") window.closeLiveCamera();
+      if (tg) tg.close(); else window.location.reload();
+    };
+
+    window.addEventListener("pagehide", stopLiveCameraStream);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && activeCamStream) closeLiveCamera();
+    });
+
+    initAccess();
+  </script>
+</body>
+</html>
